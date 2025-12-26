@@ -1,5 +1,7 @@
 # 🚀 Building an Intelligent Resume Transformer with LangGraph and GPT-4o-mini
 
+Read the complete medium article here [Building an Intelligent Resume Transformation Agent Powered by LangGraph and gpt-4o-mini](https://medium.com/towards-artificial-intelligence/building-an-intelligent-resume-transformation-agent-powered-by-langgraph-and-gpt-4o-mini-2fbb3004dcd3)
+
 *Transform unstructured resumes into structured, searchable data using AI-powered agents*
 
 ---
