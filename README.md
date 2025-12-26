@@ -8,7 +8,7 @@ Read the complete medium article here [Building an Intelligent Resume Transforma
 
 ## The Problem: Resume Chaos in Modern Hiring
 
-Every recruiter knows the pain: hundreds of resumes in different formats (PDF, DOCX, TXT), inconsistent layouts, varying structures, and no easy way to search through them. You need to find "Python developers with 5+ years experience" but you're stuck manually reading through each resume.
+Every recruiter knows the pain: hundreds of resumes in different formats (PDF, DOCX, TXT), inconsistent layouts, varying structures, and no easy way to search through them. Modern Applicant Tracking Systems automatically parse resumes, but parsing errors and inconsistencies are common. As a result, HR teams still spend significant time validating and correcting extracted data.
 
 **What if we could automatically transform any resume into a structured, searchable database?**
 
@@ -54,14 +54,7 @@ resume-transformer-agent/
     └── certifications table          # Professional certifications
 ```
 
-### Key Files
-
-- **`resume-transformer-agent.ipynb`**: The main notebook containing all four agents (Parse, Extract, Validate & Enrich, Store), workflow orchestration, and example usage
-- **`requirements.txt`**: All Python dependencies including LangGraph, OpenAI, PyPDF2, python-docx, and OCR libraries
-- **`.env`**: Store your OpenAI API key here (create this file locally)
-- **`data/`**: Drop your resume files here for processing
-- **`resume_ats.db`**: Auto-generated SQLite database with structured candidate data
-
+Please note, For simplicity and readability, this article uses the term agent to describe both Python-based workflow functions and the AI-powered extraction component. Only the extraction step uses a true AI agent backed by GPT-4o-mini, while the other agents are deterministic Python functions orchestrated within the workflow.
 ---
 
 ## ✨ Key Features
@@ -123,6 +116,13 @@ This project uses **LangGraph** to orchestrate four specialized agents in a sequ
          │
          ▼
 ┌─────────────────┐
+│  4. HITL        │  ← Manual review by human
+│  HUMAN IN THE.  │
+│  LOOP           │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
 │  4. STORE       │  ← Insert into database
 │  Agent          │
 └────────┬────────┘
@@ -133,21 +133,21 @@ This project uses **LangGraph** to orchestrate four specialized agents in a sequ
 └──────────────┘
 ```
 
-### Agent 1: Parse Agent 📄
+### Step 1: Parse Agent (Python Based function) 📄
 **Responsibility**: Extract raw text from resume files
 
 - Handles PDF, DOCX, and TXT formats
 - Falls back to OCR for image-based PDFs
 - Robust error handling
 
-### Agent 2: Extract Agent 🤖
+### Step 2: Extract Agent (LLM Powered) 🤖
 **Responsibility**: Transform raw text into structured JSON
 
 - Uses GPT-4o-mini for intelligent extraction
 - Follows strict JSON schema
 - Extracts: contact info, summary, experience, education, skills, certifications
 
-### Agent 3: Validate & Enrich Agent ✨
+### Step 3: Validate & Enrich Agent (Python Based function) ✨
 **Responsibility**: Clean and enhance the data
 
 - Validates email addresses and phone numbers
@@ -155,7 +155,14 @@ This project uses **LangGraph** to orchestrate four specialized agents in a sequ
 - Standardizes skills to company taxonomy
 - Adds metadata (processing date, version)
 
-### Agent 4: Store Agent 💾
+
+### Step 4: HITM  (Human in the loop) 💾
+**Responsibility**: Allowing user to validate the extracted data side by side
+
+- Creates a side by side view on the resume and the extracted fields in HTML file
+- User can edit the extracted data
+
+### Step 5: Store Agent  (Python Based function) 💾
 **Responsibility**: Persist data to database
 
 - Creates SQLite database if it doesn't exist
@@ -234,15 +241,6 @@ if result['success']:
     print(f"Skills: {', '.join(validated_data['skills'][:5])}")
 ```
 
-### Batch Process Multiple Resumes
-
-```python
-# Process first 10 resumes from data folder
-results = batch_process_resumes("data", limit=10)
-
-print(f"✅ Successful: {results['successful']}")
-print(f"❌ Failed: {results['failed']}")
-```
 
 ### Query the Database
 
@@ -323,80 +321,6 @@ For image-based PDFs (scanned resumes), the system automatically:
 
 ---
 
-## 🔧 Configuration
-
-### Customize Skill Taxonomy
-
-Edit the `STANDARD_SKILLS` dictionary in the notebook to add your company's skill taxonomy:
-
-```python
-STANDARD_SKILLS = {
-    'your-skill': 'Your Skill',
-    'another-skill': 'Another Skill',
-    # ... add more
-}
-```
-
-### Adjust LLM Parameters
-
-Modify the GPT-4o-mini parameters in `extract_agent()`:
-
-```python
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    temperature=0.1,  # Lower = more deterministic
-    # ... other parameters
-)
-```
-
----
-
-## 📊 Example Output
-
-```
-🚀 RESUME TRANSFORMER WORKFLOW
-================================================================================
-🔍 PARSE AGENT: Processing data/resume.pdf
-   ✓ Extracted 2847 characters
-
-🤖 EXTRACT AGENT: Analyzing resume with gpt-4o-mini
-   ✓ Extracted data for: John Doe
-
-✨ VALIDATE & ENRICH AGENT: Processing data
-   ✓ Calculated 7.5 years of experience
-   ✓ Standardized 18 skills to 15 unique skills
-
-💾 STORE AGENT: Saving to database
-   ✓ Stored candidate with ID: 42
-
-================================================================================
-📊 WORKFLOW SUMMARY
-================================================================================
-  ✓ Successfully parsed 2847 characters from PDF
-  ✓ Successfully extracted structured data using GPT-4o-mini
-  ✓ Successfully validated and enriched data
-  ✓ Successfully stored candidate with ID 42
-
-  Final Status: COMPLETED
-  Database ID: 42
-================================================================================
-```
-
----
-
-## 🧪 Testing
-
-The notebook includes test cells for:
-- Single resume processing
-- Batch processing
-- Database queries
-- Skill searches
-- Experience filters
-
-Run all cells to test the complete workflow.
-
----
-
 ## 🛠️ Tech Stack
 
 | Component | Technology |
@@ -411,77 +335,7 @@ Run all cells to test the complete workflow.
 
 ---
 
-## 🚦 Workflow States
 
-Each resume passes through these states:
-
-1. **processing** → Initial state
-2. **parsed** → Text extracted
-3. **extracted** → Structured data created
-4. **validated** → Data cleaned and enriched
-5. **completed** → Stored in database
-
-Any errors transition to **failed** state with detailed error messages.
-
----
-
-## 🎯 Use Cases
-
-### Recruiting & HR
-- Automated resume screening
-- Build searchable candidate database
-- Quick skill-based filtering
-
-### Job Boards
-- Standardize resume data
-- Improve search accuracy
-- Better candidate matching
-
-### Career Services
-- Resume analysis at scale
-- Track alumni career paths
-- Generate insights on skill trends
-
-### Research
-- Labor market analysis
-- Skill demand trends
-- Career progression patterns
-
----
-
-## 📈 Performance Considerations
-
-- **Processing Time**: ~5-15 seconds per resume (depending on LLM latency)
-- **Cost**: ~$0.001-0.003 per resume (GPT-4o-mini pricing)
-- **Accuracy**: ~95% for structured resumes, ~85% for creative layouts
-- **OCR**: Adds 10-30 seconds per resume for image-based PDFs
-
----
-
-## 🔮 Future Enhancements
-
-- [ ] Support for more file formats (RTF, HTML)
-- [ ] Enhanced skill matching with embeddings
-- [ ] Resume scoring and ranking
-- [ ] Duplicate detection
-- [ ] RESTful API wrapper
-- [ ] Web interface
-- [ ] Support for other LLMs (Claude, Llama)
-- [ ] Resume comparison and analytics
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Areas for improvement:
-
-1. **Parser enhancements**: Better OCR, more formats
-2. **Schema improvements**: Additional fields, relationships
-3. **Query capabilities**: More search options
-4. **Performance**: Parallel processing, caching
-5. **Testing**: Unit tests, integration tests
-
----
 
 ## 📝 License
 
